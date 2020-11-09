@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Sobera</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="sobel">SOBEL</string>
+    <string name="plain">PLAIN</string>
+    <string name="next">NEXT</string>
+</resources>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/darkGrey"
+    android:theme="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen"
+    tools:context=".FullscreenActivity">
+
+    <!-- The primary full-screen view. This can be replaced with whatever view
+         is needed to present your content, e.g. VideoView, SurfaceView,
+         TextureView, etc. -->
+    <FrameLayout
+        android:id="@+id/fullscreen_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1" >
+
+    </FrameLayout>
+
+
+    <!--android:style="@android:style/TextAppearance.DeviceDefault.Medium"-->
+
+    <!-- This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows.
+         android:fitsSystemWindows="true"-->
+    <FrameLayout
+        android:id="@+id/fullscreen_content_controls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+
+        <TextView android:id="@+id/text_for_effects"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/Orange"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:gravity="top"
+            android:text=""/>
+
+        <LinearLayout
+            style="?metaButtonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:orientation="horizontal"
+            tools:ignore="UselessParent">
+
+        <RelativeLayout
+            style="?metaButtonBarStyle"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="bottom|center_horizontal"
+            tools:ignore="UselessParent">
+
+            <Button
+                android:id="@+id/sobel_button"
+                android:layout_width="80dp"
+                android:layout_height="39dp"
+                android:text="@string/sobel"
+                android:textColor="@color/Orange"
+                android:background="@drawable/primary_button"
+                android:layout_centerHorizontal="true"
+                android:textSize="18sp"
+                />
+
+            <Button
+                android:id="@+id/next_button"
+                android:layout_width="80dp"
+                android:layout_height="39dp"
+                android:text="@string/next"
+                android:layout_gravity="bottom"
+                android:textColor="@color/Orange"
+                android:background="@drawable/primary_button"
+                android:layout_below="@id/sobel_button"
+                android:layout_centerHorizontal="true"
+                android:textSize="18sp"/>
+
+
+        </RelativeLayout>
+
+            <Button
+                android:alpha="0.7"
+                android:id="@+id/save_pic_button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:textColor="@color/Orange"
+                android:background="@drawable/round_button"
+                />
+
+            <RelativeLayout
+                style="?metaButtonBarStyle"
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="bottom|center_horizontal"
+                android:orientation="vertical"
+                tools:ignore="UselessParent">
+
+            <Button
+                android:id="@+id/plain_button"
+                android:layout_width="match_parent"
+                android:layout_height="39dp"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:text="@string/plain"
+                android:textColor="@color/Orange"
+                android:background="@drawable/primary_button"
+                android:textSize="18sp"/>
+
+
+            </RelativeLayout>
+
+
+
+        </LinearLayout>
+    </FrameLayout>
+
+</FrameLayout>

@@ -13,8 +13,7 @@
     <FrameLayout
         android:id="@+id/fullscreen_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1" >
+        android:layout_height="match_parent">
 
     </FrameLayout>
 
@@ -36,8 +35,18 @@
             android:textColor="@color/Orange"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:gravity="top"
+            android:gravity="top|center_horizontal"
+            android:layout_marginTop="20dp"
             android:text=""/>
+
+        <Button
+            android:id="@+id/swap_camera_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/ic_camera_flip_outline"
+            android:layout_gravity="right"
+            android:layout_marginTop="20dp"
+            android:layout_marginRight="40dp"/>
 
         <LinearLayout
             style="?metaButtonBarStyle"
@@ -49,8 +58,8 @@
 
         <RelativeLayout
             style="?metaButtonBarStyle"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
             android:layout_gravity="bottom|center_horizontal"
             tools:ignore="UselessParent">
 
@@ -61,52 +70,31 @@
                 android:text="@string/sobel"
                 android:textColor="@color/Orange"
                 android:background="@drawable/primary_button"
-                android:layout_centerHorizontal="true"
                 android:textSize="18sp"
-                />
-
-            <Button
-                android:id="@+id/next_button"
-                android:layout_width="80dp"
-                android:layout_height="39dp"
-                android:text="@string/next"
-                android:layout_gravity="bottom"
-                android:textColor="@color/Orange"
-                android:background="@drawable/primary_button"
-                android:layout_below="@id/sobel_button"
-                android:layout_centerHorizontal="true"
-                android:textSize="18sp"/>
-
-
-        </RelativeLayout>
+                android:layout_toLeftOf="@id/save_pic_button"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/save_pic_button" />
 
             <Button
                 android:alpha="0.7"
                 android:id="@+id/save_pic_button"
-                android:layout_width="0dp"
+                android:layout_width="150dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
                 android:textColor="@color/Orange"
                 android:background="@drawable/round_button"
+                android:layout_centerVertical="true"
+                android:layout_centerHorizontal="true"
                 />
-
-            <RelativeLayout
-                style="?metaButtonBarStyle"
-                android:layout_width="100dp"
-                android:layout_height="match_parent"
-                android:layout_gravity="bottom|center_horizontal"
-                android:orientation="vertical"
-                tools:ignore="UselessParent">
 
             <Button
                 android:id="@+id/plain_button"
-                android:layout_width="match_parent"
+                android:layout_width="80dp"
                 android:layout_height="39dp"
-                android:layout_centerHorizontal="true"
                 android:layout_centerVertical="true"
                 android:text="@string/plain"
                 android:textColor="@color/Orange"
                 android:background="@drawable/primary_button"
+                android:layout_toRightOf="@id/save_pic_button"
                 android:textSize="18sp"/>
 
 

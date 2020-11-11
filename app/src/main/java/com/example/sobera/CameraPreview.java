@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
@@ -62,7 +63,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.startPreview();
             mCamera.setParameters(params);
             mCamera.setPreviewDisplay(mHolder);
-
+            //surfaceChanged(mHolder,params.getPreviewFormat(),params.getPreviewSize().width,params.getPreviewSize().height);
         } catch (Exception e) {
             Log.d(VIEW_LOG_TAG, "Error starting camera preview: " + e.getMessage());
         }
@@ -130,10 +131,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         WindowManager wi =  (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         Display display = wi.getDefaultDisplay();
 
-        Log.wtf("Camera orientation rotation", String.format( "Rotation: %d",display.getRotation()));
+        /*Log.wtf("Camera orientation rotation", String.format( "Rotation: %d",display.getRotation()));
         Log.wtf("Camera orientation rotation", String.format( "Current rotation check: %d",Surface.ROTATION_90));
         Log.wtf("Camera orientation rotation", String.format( "Orientation: %d",getResources().getConfiguration().orientation));
-        Log.wtf("Camera orientation rotation", String.format( "Landscape orientation code: %d",Configuration.ORIENTATION_LANDSCAPE));
+        Log.wtf("Camera orientation rotation", String.format( "Landscape orientation code: %d",Configuration.ORIENTATION_LANDSCAPE));*/
 
         if(display.getRotation() == Surface.ROTATION_0) {
             parameters.setPreviewSize(h, w);

@@ -42,6 +42,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -54,7 +55,8 @@ public class FullscreenActivity extends AppCompatActivity{
     private Camera mCamera;
     private CameraPreview mPreview;
     String effect = "none";
-    public static final int RequestPermissionCode = 1;
+    public static final int RequestPermissionCodeCamera = 100;
+    public static final int RequestPermissionCodeStorage = 200;
     File folder = new File(Environment.getExternalStorageDirectory() +
             File.separator + "SOBERA");
     private final Handler mHideHandler = new Handler();
@@ -75,6 +77,7 @@ public class FullscreenActivity extends AppCompatActivity{
     int currentCam = 0;
     String lastJPGPath;
     String effectUnavailable = "Effect unavailable";
+    String folderPic;
 
     /**
      * Some older devices needs a small delay between UI widget updates
@@ -154,9 +157,15 @@ public class FullscreenActivity extends AppCompatActivity{
 
        if(ContextCompat.checkSelfPermission(FullscreenActivity.this,Manifest.permission.CAMERA)
                != PackageManager.PERMISSION_GRANTED){
-           ActivityCompat.requestPermissions(FullscreenActivity.this,new String[]{ Manifest.permission.CAMERA},100);
+           ActivityCompat.requestPermissions(FullscreenActivity.this,new String[]{ Manifest.permission.CAMERA},RequestPermissionCodeCamera);
+       }
+       else{
+           doStuff();
        }
 
+    }
+
+    private void doStuff(){
         // Create an instance of Camera
         mCamera = getCameraInstance();
 
@@ -187,65 +196,65 @@ public class FullscreenActivity extends AppCompatActivity{
             }
         });
 
-       mContentView.setOnTouchListener(new OnSwipeTouchListener(FullscreenActivity.this) {
-           /*public boolean onSwipeTop() {
-               //Toast.makeText(FullscreenActivity.this, "top", Toast.LENGTH_SHORT).show();
-               return true;
+        mContentView.setOnTouchListener(new OnSwipeTouchListener(FullscreenActivity.this) {
+            /*public boolean onSwipeTop() {
+                //Toast.makeText(FullscreenActivity.this, "top", Toast.LENGTH_SHORT).show();
+                return true;
 
-            public boolean onSwipeBottom() {
-               //Toast.makeText(FullscreenActivity.this, "bottom", Toast.LENGTH_SHORT).show();
-               return true;
-           }
-           }*/
-           public boolean onSwipeRight() {
-               if(maxEffectIdx != 0){
-                   effectIdx = effectIdx-1;
-                   if(effectIdx == -1){
-                       effectIdx = maxEffectIdx-1;
-                   }
-                   effect = allColorsEffects.get(effectIdx);
-                   if(effect.equals("none")){
-                       textEffect.setText("no filter");
-                   }
-                   else{
-                       textEffect.setText(effect);
-                   }
-                   mPreview.refreshCamera(mCamera,effect);
-               }
-               else{
-                   textEffect.setText(effectUnavailable);
-               }
+             public boolean onSwipeBottom() {
+                //Toast.makeText(FullscreenActivity.this, "bottom", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            }*/
+            public boolean onSwipeRight() {
+                if(maxEffectIdx != 0){
+                    effectIdx = effectIdx-1;
+                    if(effectIdx == -1){
+                        effectIdx = maxEffectIdx-1;
+                    }
+                    effect = allColorsEffects.get(effectIdx);
+                    if(effect.equals("none")){
+                        textEffect.setText("no filter");
+                    }
+                    else{
+                        textEffect.setText(effect);
+                    }
+                    mPreview.refreshCamera(mCamera,effect);
+                }
+                else{
+                    textEffect.setText(effectUnavailable);
+                }
 
-               return true;
-           }
-           public boolean onSwipeLeft() {
-               if(maxEffectIdx != 0){
-                   effectIdx = effectIdx+1;
-                   if(effectIdx == maxEffectIdx){
-                       effectIdx = 0;
-                   }
-                   effect = allColorsEffects.get(effectIdx);
-                   if(effect.equals("none")){
-                       textEffect.setText("no filter");
-                   }
-                   else{
-                       textEffect.setText(effect);
-                   }
-                   mPreview.refreshCamera(mCamera,effect);
-               }
-               else{
-                   textEffect.setText(effectUnavailable);
-               }
+                return true;
+            }
+            public boolean onSwipeLeft() {
+                if(maxEffectIdx != 0){
+                    effectIdx = effectIdx+1;
+                    if(effectIdx == maxEffectIdx){
+                        effectIdx = 0;
+                    }
+                    effect = allColorsEffects.get(effectIdx);
+                    if(effect.equals("none")){
+                        textEffect.setText("no filter");
+                    }
+                    else{
+                        textEffect.setText(effect);
+                    }
+                    mPreview.refreshCamera(mCamera,effect);
+                }
+                else{
+                    textEffect.setText(effectUnavailable);
+                }
 
-               return true;
-           }
+                return true;
+            }
 
-           public boolean onSimpleClick() {
-               toggle();
-               return true;
-           }
+            public boolean onSimpleClick() {
+                toggle();
+                return true;
+            }
 
-       });
+        });
 
 
         // Upon interacting with UI controls, delay any scheduled hide()
@@ -266,37 +275,43 @@ public class FullscreenActivity extends AppCompatActivity{
             }
 
         });
-       mCamShotButton.setOnClickListener(new View.OnClickListener() {
-           public void onClick(View v) {
-               Log.wtf("Effects tag", "Click on camera button");
-               if(ContextCompat.checkSelfPermission(FullscreenActivity.this,Manifest.permission.WRITE_EXTERNAL_STORAGE)
-               != PackageManager.PERMISSION_GRANTED){
-                   ActivityCompat.requestPermissions(FullscreenActivity.this,new String[]{ Manifest.permission.WRITE_EXTERNAL_STORAGE},100);
-               }
-               mCamera.takePicture(shutterCallback, null, jpegCallback );
+        mCamShotButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Log.wtf("Effects tag", "Click on camera button");
+                if(ContextCompat.checkSelfPermission(FullscreenActivity.this,Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED){
+                    ActivityCompat.requestPermissions(FullscreenActivity.this,new String[]{ Manifest.permission.WRITE_EXTERNAL_STORAGE},RequestPermissionCodeStorage);
+                }
+                else{
+                    takeAShot();
+                    //mCamera.takePicture(shutterCallback, null, jpegCallback );
+                }
 
-           }
-       });
-       mSwapCamButton.setOnClickListener(new View.OnClickListener() {
-           public void onClick(View v) {
-               Log.wtf("Effects tag", "Click on swap camera button");
-               currentCam++;
-               if(currentCam == numberCamera){
-                   currentCam = 0;
-               }
-               mCamera.stopPreview();
-               preview.removeView(mPreview);
-               if (mCamera != null) {
-                   mCamera.release();
-               }
-               mCamera = Camera.open(currentCam);
-               setCameraSize(mCamera.getParameters());
-               preview.addView(mPreview);
-               mPreview.refreshCamera(mCamera,effect);
+            }
+        });
+        mSwapCamButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Log.wtf("Effects tag", "Click on swap camera button");
+                currentCam++;
+                if(currentCam == numberCamera){
+                    currentCam = 0;
+                }
+                mCamera.stopPreview();
+                preview.removeView(mPreview);
+                if (mCamera != null) {
+                    mCamera.release();
+                }
+                mCamera = Camera.open(currentCam);
+                setCameraSize(mCamera.getParameters());
+                preview.addView(mPreview);
+                mPreview.refreshCamera(mCamera,effect);
 
-           }
-       });
+            }
+        });
+    }
 
+    private void takeAShot(){
+        mCamera.takePicture(shutterCallback, null, jpegCallback );
     }
 
     Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
@@ -326,7 +341,16 @@ public class FullscreenActivity extends AppCompatActivity{
                     }
                 }
                 lastJPGPath = String.format("Sobera_%d", System.currentTimeMillis());
-                outStream = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath()+ "/SOBERA/" + lastJPGPath + ".jpg");
+                String state = Environment.getExternalStorageState();
+                if (state.equals(Environment.MEDIA_MOUNTED)) {
+                    // Available to read and write
+                    folderPic = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
+                }
+                else{
+                    folderPic = "";
+                    Toast.makeText(FullscreenActivity.this, "No external storage, pictures won't be saved.", Toast.LENGTH_SHORT).show();
+                }
+                outStream = new FileOutputStream(folderPic + "SOBERA/" + lastJPGPath + ".jpg");
                 if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
                     WindowManager wi =  (WindowManager) FullscreenActivity.this.getSystemService(Context.WINDOW_SERVICE);
                     Display display = wi.getDefaultDisplay();
@@ -483,9 +507,19 @@ public class FullscreenActivity extends AppCompatActivity{
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] result) {
         switch (requestCode) {
-            case RequestPermissionCode:
-                if (result.length > 0 && result[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(FullscreenActivity.this, "Permission Granted.", Toast.LENGTH_LONG).show();
+            case RequestPermissionCodeCamera:
+                if (!Arrays.asList(result).contains(PackageManager.PERMISSION_DENIED)) {
+                    Toast.makeText(FullscreenActivity.this, "Permission Camera Granted.", Toast.LENGTH_LONG).show();
+                    doStuff();
+                } else {
+                    Toast.makeText(FullscreenActivity.this, "Permission Denied. You can change this parameter in the settings of your phone.", Toast.LENGTH_LONG).show();
+                }
+                break;
+            case RequestPermissionCodeStorage:
+                if (!Arrays.asList(result).contains(PackageManager.PERMISSION_DENIED)) {
+                    Toast.makeText(FullscreenActivity.this, "Permission Storage Granted.", Toast.LENGTH_LONG).show();
+                    takeAShot();
+                    //mCamera.takePicture(shutterCallback, null, jpegCallback );
                 } else {
                     Toast.makeText(FullscreenActivity.this, "Permission Denied. You can change this parameter in the settings of your phone.", Toast.LENGTH_LONG).show();
                 }
@@ -511,8 +545,8 @@ public class FullscreenActivity extends AppCompatActivity{
 
             FileOutputStream outStream = null;
             try {
-                outStream = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath() + "/SOBERA/" + lastJPGPath + "_Sobel.jpg");
-                Bitmap bitmap = BitmapFactory.decodeFile(Environment.getExternalStorageDirectory().getAbsolutePath() + "/SOBERA/" + lastJPGPath + ".jpg");
+                outStream = new FileOutputStream(folderPic + "SOBERA/" + lastJPGPath + "_Sobel.jpg");
+                Bitmap bitmap = BitmapFactory.decodeFile(folderPic + "SOBERA/" + lastJPGPath + ".jpg");
 
                 Sobel.filterSobel(bitmap);
 

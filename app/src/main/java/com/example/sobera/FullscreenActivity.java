@@ -15,9 +15,9 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
+import android.graphics.ColorSpace;
 import android.graphics.Paint;
 import android.hardware.Camera;
 import android.graphics.Matrix;
@@ -27,14 +27,15 @@ import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Display;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -52,9 +53,7 @@ public class FullscreenActivity extends AppCompatActivity{
 
     private Camera mCamera;
     private CameraPreview mPreview;
-    String effect;
-    String sobelEffect = "Sobel preview (not final)";
-    boolean sobelActive = false;
+    String effect = "none";
     public static final int RequestPermissionCode = 1;
     File folder = new File(Environment.getExternalStorageDirectory() +
             File.separator + "SOBERA");
@@ -64,25 +63,18 @@ public class FullscreenActivity extends AppCompatActivity{
     private Button mPlainButton;
     private Button mCamShotButton;
     private Button mSwapCamButton;
+    private Button mEmptyButton;
     private int effectIdx;
     private int maxEffectIdx;
     private List<String> allColorsEffects;
     private TextView textEffect;
+    private TextView textSobel;
+    private ImageView imageView;
     Camera.Size bestSize = null;
     final int numberCamera = Camera.getNumberOfCameras();
     int currentCam = 0;
-
-    /**
-     * Whether or not the system UI should be auto-hidden after
-     * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
-     */
-    private static final boolean AUTO_HIDE = true;
-
-    /**
-     * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
-     * user interaction before hiding the system UI.
-     */
-    private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
+    String lastJPGPath;
+    String effectUnavailable = "Effect unavailable";
 
     /**
      * Some older devices needs a small delay between UI widget updates
@@ -127,39 +119,6 @@ public class FullscreenActivity extends AppCompatActivity{
             hide();
         }
     };
-    /**
-     * Touch listener to use for in-layout UI controls to delay hiding the
-     * system UI. This is to prevent the jarring behavior of controls going away
-     * while interacting with activity UI.
-     */
-    private final View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            switch (motionEvent.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    Log.wtf("Effects tag", "Click down on button");
-                    effect = allColorsEffects.get(effectIdx);
-                    mPreview.refreshCamera(mCamera,effect);
-                    if (AUTO_HIDE) {
-                        delayedHide(AUTO_HIDE_DELAY_MILLIS);
-                    }
-                    break;
-                case MotionEvent.ACTION_UP:
-                    view.performClick();
-                    effectIdx = effectIdx+1;
-                    if(effectIdx == maxEffectIdx){
-                        effectIdx = 0;
-                    }
-                    Log.wtf("Effects tag", "Click up on button");
-                    effect = "none";
-                    mPreview.refreshCamera(mCamera,effect);
-                    break;
-                default:
-                    break;
-            }
-            return false;
-        }
-    };
 
    @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,6 +134,22 @@ public class FullscreenActivity extends AppCompatActivity{
         mCamShotButton = (Button) findViewById(R.id.save_pic_button);
         mSwapCamButton = (Button) findViewById(R.id.swap_camera_button);
         textEffect = (TextView) findViewById(R.id.text_for_effects);
+        textSobel = (TextView) findViewById(R.id.text_apply_sobel);
+       imageView = (ImageView) findViewById(R.id.imageView1);
+       mEmptyButton = (Button) findViewById(R.id.empty_button);
+
+       mSobelButton.setVisibility(View.GONE);
+       mPlainButton.setVisibility(View.GONE);
+       mEmptyButton.setVisibility(View.GONE);
+       textSobel.setVisibility(View.GONE);
+       imageView.setVisibility(View.GONE);
+
+       if(effect.equals("none")){
+           textEffect.setText("no filter");
+       }
+       else{
+           textEffect.setText(effect);
+       }
 
 
        if(ContextCompat.checkSelfPermission(FullscreenActivity.this,Manifest.permission.CAMERA)
@@ -189,20 +164,9 @@ public class FullscreenActivity extends AppCompatActivity{
         allColorsEffects = params.getSupportedColorEffects();
         for(int i=0; i<allColorsEffects.size(); i++){
             Log.wtf("Effects tag", "Available effect: " + allColorsEffects.get(i));
-            if(allColorsEffects.get(i).equals("none")){
-                Log.wtf("Remove effects tag", "Remove effect: " + allColorsEffects.get(i));
-                allColorsEffects.remove(i);
-                i--;
-            }
         }
-       List<Camera.Size> sizeList = mCamera.getParameters().getSupportedPreviewSizes();
-       bestSize = sizeList.get(0);
-       for(int i = 1; i < sizeList.size(); i++){
-           if((sizeList.get(i).width * sizeList.get(i).height) > (bestSize.width * bestSize.height)){
-               bestSize = sizeList.get(i);
-           }
-       }
-       params.setPictureSize(bestSize.width, bestSize.height);
+
+        setCameraSize(params);
 
 
 
@@ -234,50 +198,49 @@ public class FullscreenActivity extends AppCompatActivity{
            }
            }*/
            public boolean onSwipeRight() {
-               //Toast.makeText(FullscreenActivity.this, "right", Toast.LENGTH_SHORT).show();
                if(maxEffectIdx != 0){
-                   effect = allColorsEffects.get(effectIdx);
                    effectIdx = effectIdx-1;
                    if(effectIdx == -1){
                        effectIdx = maxEffectIdx-1;
                    }
-                   textEffect.setText(effect);
+                   effect = allColorsEffects.get(effectIdx);
+                   if(effect.equals("none")){
+                       textEffect.setText("no filter");
+                   }
+                   else{
+                       textEffect.setText(effect);
+                   }
                    mPreview.refreshCamera(mCamera,effect);
                }
                else{
-                   textEffect.setText("Effect indisponible");
-               }
-
-               if(sobelActive){
-                   sobelActive = false;
+                   textEffect.setText(effectUnavailable);
                }
 
                return true;
            }
            public boolean onSwipeLeft() {
-               //Toast.makeText(FullscreenActivity.this, "left", Toast.LENGTH_SHORT).show();
                if(maxEffectIdx != 0){
-                   effect = allColorsEffects.get(effectIdx);
                    effectIdx = effectIdx+1;
                    if(effectIdx == maxEffectIdx){
                        effectIdx = 0;
                    }
-                   textEffect.setText(effect);
+                   effect = allColorsEffects.get(effectIdx);
+                   if(effect.equals("none")){
+                       textEffect.setText("no filter");
+                   }
+                   else{
+                       textEffect.setText(effect);
+                   }
                    mPreview.refreshCamera(mCamera,effect);
                }
                else{
-                   textEffect.setText("Effect indisponible");
-               }
-
-               if(sobelActive){
-                   sobelActive = false;
+                   textEffect.setText(effectUnavailable);
                }
 
                return true;
            }
 
            public boolean onSimpleClick() {
-               //Toast.makeText(FullscreenActivity.this, "Tap", Toast.LENGTH_SHORT).show();
                toggle();
                return true;
            }
@@ -292,27 +255,14 @@ public class FullscreenActivity extends AppCompatActivity{
         mSobelButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.wtf("Effects tag", "Click on sobel button");
-                if(allColorsEffects.contains("blackboard")){
-                    effect = "blackboard";
-                    sobelActive = true;
-                    textEffect.setText(sobelEffect);
-                    mPreview.refreshCamera(mCamera,effect);
-                }
-                else{
-                    textEffect.setText("Effect indisponible");
-                }
+                doSobel(true);
 
             }
         });
         mPlainButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.wtf("Effects tag", "Click on plain button");
-                effect = "none";
-                textEffect.setText(effect);
-                mPreview.refreshCamera(mCamera,effect);
-                if(sobelActive){
-                    sobelActive = false;
-                }
+                doSobel(false);
             }
 
         });
@@ -323,13 +273,7 @@ public class FullscreenActivity extends AppCompatActivity{
                != PackageManager.PERMISSION_GRANTED){
                    ActivityCompat.requestPermissions(FullscreenActivity.this,new String[]{ Manifest.permission.WRITE_EXTERNAL_STORAGE},100);
                }
-               if(sobelActive){
-                   mPreview.refreshCamera(mCamera,"mono");
-                   mCamera.takePicture(shutterCallback, null, jpegCallback );
-               }
-               else{
-                   mCamera.takePicture(shutterCallback, null, jpegCallback );
-               }
+               mCamera.takePicture(shutterCallback, null, jpegCallback );
 
            }
        });
@@ -346,6 +290,7 @@ public class FullscreenActivity extends AppCompatActivity{
                    mCamera.release();
                }
                mCamera = Camera.open(currentCam);
+               setCameraSize(mCamera.getParameters());
                preview.addView(mPreview);
                mPreview.refreshCamera(mCamera,effect);
 
@@ -364,6 +309,7 @@ public class FullscreenActivity extends AppCompatActivity{
     Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
         public void onPictureTaken(byte[] data, Camera camera) {
             FileOutputStream outStream = null;
+            Bitmap realImage = BitmapFactory.decodeByteArray(data, 0, data.length, null);
             try {
                 // write to local sandbox file system
                 // outStream =
@@ -374,19 +320,19 @@ public class FullscreenActivity extends AppCompatActivity{
                 if (!folder.exists()) {
                     boolean success = folder.mkdirs();
                     if (success) {
-                        Toast.makeText(FullscreenActivity.this, "Directory Created", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(FullscreenActivity.this, "Directory Created", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(FullscreenActivity.this, "Failed - Error", Toast.LENGTH_SHORT).show();
                     }
                 }
-
-                outStream = new FileOutputStream(String.format(Environment.getExternalStorageDirectory().getAbsolutePath()+ "/SOBERA/Sobera_%d.jpg", System.currentTimeMillis()));
+                lastJPGPath = String.format("Sobera_%d", System.currentTimeMillis());
+                outStream = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath()+ "/SOBERA/" + lastJPGPath + ".jpg");
                 if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
                     WindowManager wi =  (WindowManager) FullscreenActivity.this.getSystemService(Context.WINDOW_SERVICE);
                     Display display = wi.getDefaultDisplay();
                     if(display.getRotation() == Surface.ROTATION_270) {
-                        Bitmap realImage = BitmapFactory.decodeByteArray(data, 0, data.length, null);
-                        realImage= rotate(realImage, 180, sobelActive);
+                        //Bitmap realImage = BitmapFactory.decodeByteArray(data, 0, data.length, null);
+                        realImage= rotate(realImage, 180);
                         boolean bo = realImage.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
                         if(bo){
                             Log.wtf("Picture changed", "Success");
@@ -396,25 +342,16 @@ public class FullscreenActivity extends AppCompatActivity{
                         }
                     }
                     else{
-                        if(!sobelActive){
-                            outStream.write(data);
-                        }
-                        else{
-                            Bitmap realImage = BitmapFactory.decodeByteArray(data, 0, data.length, null);
-                            realImage= rotate(realImage, 0, sobelActive);
-                            realImage.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
-                            //outStream.write(Sobel.doSobel(realImage));
-                        }
-
+                        outStream.write(data);
                     }
                 }
                 else{
-                    Bitmap realImage = BitmapFactory.decodeByteArray(data, 0, data.length, null);
+                    //Bitmap realImage = BitmapFactory.decodeByteArray(data, 0, data.length, null);
                     if(currentCam == Camera.CameraInfo.CAMERA_FACING_FRONT){
-                        realImage= rotate(realImage, -90, sobelActive);
+                        realImage= rotate(realImage, -90);
                     }
                     else{
-                        realImage= rotate(realImage, 90, sobelActive);
+                        realImage= rotate(realImage, 90);
                     }
                     boolean bo = realImage.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
                     if(bo){
@@ -423,34 +360,34 @@ public class FullscreenActivity extends AppCompatActivity{
                     else{
                         Log.wtf("Picture changed", "Fail");
                     }
-                    /*if(sobelActive){
-                        outStream.write(Sobel.doSobel(realImage));
-                    }
-                    else{
-                        boolean bo = realImage.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
-                        if(bo){
-                            Log.wtf("Picture changed", "Success");
-                        }
-                        else{
-                            Log.wtf("Picture changed", "Fail");
-                        }
-                    }*/
 
                 }
                 outStream.close();
+                mCamera.stopPreview();
+                FrameLayout.LayoutParams imageViewparam = (FrameLayout.LayoutParams) imageView.getLayoutParams();
+                imageViewparam.height = realImage.getHeight();
+                imageView.setLayoutParams(imageViewparam);
+                imageView.setImageBitmap(realImage);
+                imageView.setVisibility(View.VISIBLE);
+                textSobel.setVisibility(View.VISIBLE);
+
                 Log.wtf("Camera settings", "onPictureTaken - wrote bytes: " + data.length);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
             }
             Log.wtf("Camera settings", "onPictureTaken - jpeg");
-            mPreview.refreshCamera(mCamera,effect);
+            //mPreview.refreshCamera(mCamera,effect);
+            mCamShotButton.setVisibility(View.GONE);
+            mSwapCamButton.setVisibility(View.GONE);
+            mSobelButton.setVisibility(View.VISIBLE);
+            mPlainButton.setVisibility(View.VISIBLE);
+            mEmptyButton.setVisibility(View.VISIBLE);
         }
     };
 
-    public static Bitmap rotate(Bitmap bitmap, int degree, boolean sobel) {
+    public static Bitmap rotate(Bitmap bitmap, int degree) {
         int w = bitmap.getWidth();
         int h = bitmap.getHeight();
 
@@ -458,15 +395,7 @@ public class FullscreenActivity extends AppCompatActivity{
         //       mtx.postRotate(degree);
         mtx.setRotate(degree);
 
-        //return Bitmap.createBitmap(bitmap, 0, 0, w, h, mtx, true);
-
-        Bitmap result = Bitmap.createBitmap(bitmap, 0, 0, w, h, mtx, true);
-
-        if(sobel){
-            result = Sobel.doSobel(result);
-        }
-
-        return result;
+        return Bitmap.createBitmap(bitmap, 0, 0, w, h, mtx, true);
     }
 
     @Override
@@ -567,15 +496,47 @@ public class FullscreenActivity extends AppCompatActivity{
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-
+        /*
         // Checks the orientation of the screen
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
         } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
             Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
-        }
+        }*/
     }
 
+
+    private void doSobel(boolean makeItAppend) {
+        if(makeItAppend){
+
+            FileOutputStream outStream = null;
+            try {
+                outStream = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath() + "/SOBERA/" + lastJPGPath + "_Sobel.jpg");
+                Bitmap bitmap = BitmapFactory.decodeFile(Environment.getExternalStorageDirectory().getAbsolutePath() + "/SOBERA/" + lastJPGPath + ".jpg");
+
+                Sobel.filterSobel(bitmap);
+
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outStream);
+                outStream.close();
+
+            }
+            catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+        mSobelButton.setVisibility(View.GONE);
+        mPlainButton.setVisibility(View.GONE);
+        mEmptyButton.setVisibility(View.GONE);
+        textSobel.setVisibility(View.GONE);
+        imageView.setVisibility(View.GONE);
+        mCamShotButton.setVisibility(View.VISIBLE);
+        mSwapCamButton.setVisibility(View.VISIBLE);
+        mCamera.startPreview();
+        mPreview.refreshCamera(mCamera,effect);
+    }
 
     public static class Sobel {
         private static Bitmap toGreyScale( Bitmap source ) {
@@ -594,7 +555,7 @@ public class FullscreenActivity extends AppCompatActivity{
             return greyScaleBitmap;
         }
 
-        public static Bitmap doSobel( Bitmap source) {
+        public static void filterSobel( Bitmap source) {
 
             Bitmap grey = toGreyScale(source);
 
@@ -611,36 +572,46 @@ public class FullscreenActivity extends AppCompatActivity{
             for( int y=1; y<h-1; y++ ) {
                 for( int x=1; x<w-1; x++ ) {
                     int idx = (y * w + x );
-                    /*
+
                     // Apply Sobel filter
                     int tl = (bitmapData[idx - w - 1]) & 0xFF;
                     int tr = (bitmapData[idx - w + 1]) & 0xFF;
                     int l = (bitmapData[idx - 1]) & 0xFF;
                     int r = (bitmapData[idx + 1]) & 0xFF;
+                    int t = (bitmapData[idx - w]) & 0xFF;
+                    int b = (bitmapData[idx + w]) & 0xFF;
                     int bl = (bitmapData[idx + w - 1]) & 0xFF;
                     int br = (bitmapData[idx + w + 1]) & 0xFF;
 
-                    int sx = (int) ( tr - tl + 2 * ( r - l ) + br - bl );
+                    int sx1 = (int) ( tr - tl + 2 * ( r - l ) + br - bl ); //Matrix Gx
+                    int sx2 = (int) ( -tr - tl + 2 * ( b - t ) + br + bl ); //Matrix Gy
+                    int sx = abs(sx1) + abs(sx2);
                     sx = sx & 0xFF;
 
                     // Put back into ARG and B bytes
-                    output[idx] = (sx << 24) | ( sx << 16) | (sx << 8) | sx;*/
-
-                    int sx = ((-1 * bitmapData[idx-w-1]) + ( 1 * bitmapData[idx-w+1] ) + (-2 * bitmapData[idx-1]) + ( 2 * bitmapData[idx+1] ) + (-1 * bitmapData[idx+w-1]) + ( 1 * bitmapData[idx+w+1] ) );
-                    if(sx>128){
-                        sx = 255;
-                    }
-                    else{
-                        sx = 0;
-                    }
-                    output[idx] = sx;
-                    source.setPixel(x, y, Color.argb(Color.alpha(source.getPixel(x,y)), sx, sx, sx));
+                    output[idx] = (sx << 24) | ( sx << 16) | (sx << 8) | sx;
                 }
             }
-            return source;
-            //source.copyPixelsFromBuffer( IntBuffer.wrap(output));
-            //return output;
+            source.copyPixelsFromBuffer( IntBuffer.wrap(output));
         }
+
+        private static int abs(int i) {
+            if(i<0){
+                return -i;
+            }
+            return i;
+        }
+    }
+
+    private void setCameraSize(Camera.Parameters params){
+        List<Camera.Size> sizeList = params.getSupportedPreviewSizes();
+        bestSize = sizeList.get(0);
+        for(int i = 1; i < sizeList.size(); i++){
+            if((sizeList.get(i).width * sizeList.get(i).height) > (bestSize.width * bestSize.height)){
+                bestSize = sizeList.get(i);
+            }
+        }
+        params.setPictureSize(bestSize.width, bestSize.height);
     }
 
 }

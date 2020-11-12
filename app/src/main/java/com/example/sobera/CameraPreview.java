@@ -2,10 +2,7 @@ package com.example.sobera;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.PixelFormat;
+
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
@@ -15,7 +12,6 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import java.io.IOException;
-import java.util.List;
 
 /** A basic Camera preview class */
 @SuppressLint("ViewConstructor")

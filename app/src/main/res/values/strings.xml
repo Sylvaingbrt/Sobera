@@ -3,6 +3,7 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="sobel">SOBEL</string>
-    <string name="plain">NONE</string>
+    <string name="plain">RETURN</string>
     <string name="next">NEXT</string>
+    <string name="applyFilter">Would you like to apply Sobel filter?</string>
 </resources>
